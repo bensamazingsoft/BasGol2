@@ -89,7 +89,7 @@ public class Coord implements Comparable<Object>
 
 			  Coord other = (Coord) arg;
 
-			  return (this.x - other.getX() != 0) ? this.x - other.getX() : this.y - other.getY();
+			  return (this.y - other.getY() != 0) ? this.y - other.getY() : ((this.x - other.getX() != 0) ? this.x - other.getX() : 0 );
 
 		    }
 

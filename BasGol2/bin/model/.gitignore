@@ -3,3 +3,8 @@
 /Pattern.class
 /PatternFrame.class
 /package-info.class
+/BasGolCanvas.class
+/BasGolCanvas$MouseClickControls.class
+/BasGolCanvas$MouseDragControls.class
+/Selection.class
+/BasGolCanvas$MouseDragReleaseControls.class

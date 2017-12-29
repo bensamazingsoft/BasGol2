@@ -20,18 +20,16 @@ import javafx.scene.paint.Color;
 public class PatternFrame extends StackPane
         {
 
-	      private static final int    SIZE	= 100;
-	      private static final String BLACK	= "black";
-	      private static final String WHITE	= "WHITE";
+	      private static final int SIZE = 100;
 
-	      private Pattern	    pattern;
-	      private Canvas	    canvas;
-	      private GraphicsContext	    graphic;
-	      private File		    imageFile;
-	      private Image		    image;
+	      private Pattern	 pattern;
+	      private Canvas	 canvas;
+	      private GraphicsContext	 graphic;
+	      private File		 imageFile;
+	      private Image		 image;
 
-	      private BorderPane	    bp	= new BorderPane();
-	      private Label		    nameLbl;
+	      private BorderPane	 bp   = new BorderPane();
+	      private Label		 nameLbl;
 
 
 	      public PatternFrame(Pattern pattern) throws IOException
@@ -49,9 +47,10 @@ public class PatternFrame extends StackPane
 				        createImage();
 				}
 
-			  image = new Image(imageFile.toURI().toURL().toString(), SIZE, SIZE, false, false);
+			  image = new Image(imageFile.toURI().toURL().toString(), SIZE, SIZE, true, false);
+			  ImageView view = new ImageView(image);
 
-			  bp.setCenter(new ImageView(image));
+			  bp.setCenter(view);
 
 			  this.getChildren().add(bp);
 
@@ -62,7 +61,7 @@ public class PatternFrame extends StackPane
 		    {
 
 			  // check size
-			  canvas = new Canvas(pattern.getSize() * 5, pattern.getSize() * 5);
+			  canvas = new Canvas(pattern.getxSize() * 5, pattern.getySize() * 5);
 			  graphic = canvas.getGraphicsContext2D();
 
 			  pattern.getCoords().forEach((coord, bool) -> {

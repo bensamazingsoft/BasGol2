@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class Pattern
         {
 
-	      private int		    size;
+	      private int		    xSize, ySize;
 	      private String	    name;
 
 	      private Map<Coord, Boolean> coords = new HashMap<>();
@@ -19,40 +19,24 @@ public class Pattern
 	      public Pattern()
 		    {
 			  this.name = "default";
-			  this.size = 10;
+			  this.xSize = 0;
+			  this.ySize = 0;
 
 		    }
 
 
-	      public Pattern(String name, int size, Map<Coord, Boolean> coords)
+	      public Pattern(String name, int xSize, int ySize, Map<Coord, Boolean> coords)
 		    {
 
 			  this.name = name;
-			  this.size = size;
+			  this.xSize = xSize;
+			  this.ySize = ySize;
 			  this.coords = coords;
+			  
 
 		    }
 
 
-	      /**
-	       * @return the size
-	       */
-	      public int getSize()
-		    {
-
-			  return size;
-		    }
-
-
-	      /**
-	       * @param size
-	       *                the size to set
-	       */
-	      public void setSize(int size)
-		    {
-
-			  this.size = size;
-		    }
 
 
 	      /**
@@ -95,4 +79,48 @@ public class Pattern
 
 			  this.coords = coords;
 		    }
+
+
+	      
+	      /**
+	       * @return the ySize
+	       */
+	      public int getySize()
+	              {
+	      
+	      	      return ySize;
+	              }
+
+
+	      
+	      /**
+	       * @param ySize the ySize to set
+	       */
+	      public void setySize(int ySize)
+	              {
+	      
+	      	      this.ySize = ySize;
+	              }
+
+
+	      
+	      /**
+	       * @return the xSize
+	       */
+	      public int getxSize()
+	              {
+	      
+	      	      return xSize;
+	              }
+
+
+	      
+	      /**
+	       * @param xSize the xSize to set
+	       */
+	      public void setxSize(int xSize)
+	              {
+	      
+	      	      this.xSize = xSize;
+	              }
         }
