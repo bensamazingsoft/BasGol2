@@ -1,10 +1,16 @@
 
 package model;
 
-public class Coord implements Comparable<Object>
+import java.io.Serializable;
+
+public class Coord implements Comparable<Object>, Serializable
         {
 
-	      private int x, y;
+	      /**
+       * 
+       */
+      private static final long serialVersionUID = 3232742573742560148L;
+	    private int x, y;
 
 
 	      public Coord(){
