@@ -1,5 +1,5 @@
 
-package application;
+package model;
 
 import java.util.Optional;
 import java.util.function.UnaryOperator;

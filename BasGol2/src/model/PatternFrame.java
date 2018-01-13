@@ -31,22 +31,22 @@ public class PatternFrame extends StackPane
 
 	    private static final int SIZE	= 100;
 
-	    private Pattern	     pattern;
+	    private GolPattern	     pattern;
 	    private Canvas	     canvas;
 	    private GraphicsContext  graphic;
 	    private File	     imageFile;
 	    private Image	     image;
 	    private ImageView	     rotateImg	= new ImageView("./images/rotateIcon2.png");
-	    public static DataFormat	     dataFormat	= new DataFormat("BasGol2.Pattern");
+	    public static DataFormat dataFormat	= new DataFormat("BasGol2.Pattern");
 
 	    private BorderPane	     bp		= new BorderPane();
 	    private BorderPane	     top	= new BorderPane();
 	    private HBox	     topBut	= new HBox();
-	    private Button	     rotateBut, delBut;
+	    private Button	     rotateBut;
 	    private Label	     nameLbl;
 
 
-	    public PatternFrame(Pattern pattern) throws IOException
+	    public PatternFrame(GolPattern pattern) throws IOException
 		  {
 
 			this.setStyle("-fx-background-color : white");
@@ -77,8 +77,11 @@ public class PatternFrame extends StackPane
 			this.getChildren().add(bp);
 
 			rotateBut.setOnAction(e -> {
+
 			      view.setRotate(view.getRotate() + 90);
+
 			      pattern.rotate();
+
 			});
 		  }
 

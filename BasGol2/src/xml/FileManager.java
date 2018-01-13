@@ -8,7 +8,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
-import model.Pattern;
+import model.GolPattern;
 
 public class FileManager
         {
@@ -16,7 +16,7 @@ public class FileManager
 	      private JAXBContext  context;
 	      private Marshaller   marshaller;
 	      private Unmarshaller unMarshaller;
-	      private Pattern      pattern;
+	      private GolPattern      pattern;
 	      private File	       xmlFile;
 
 
@@ -24,20 +24,20 @@ public class FileManager
 		    {
 			  this.xmlFile = xmlFile;
 
-			  context = JAXBContext.newInstance(Pattern.class);
+			  context = JAXBContext.newInstance(GolPattern.class);
 			  marshaller = context.createMarshaller();
 			  unMarshaller = context.createUnmarshaller();
 
 		    }
 
 
-	      public FileManager(Pattern pattern) throws JAXBException
+	      public FileManager(GolPattern pattern) throws JAXBException
 		    {
 			  this.pattern = pattern;
 			  xmlFile = new File(".\\grid_files\\" + pattern.getName() + ".xml");
 			  xmlFile.getParentFile().mkdirs();
 
-			  context = JAXBContext.newInstance(Pattern.class);
+			  context = JAXBContext.newInstance(GolPattern.class);
 			  marshaller = context.createMarshaller();
 			  unMarshaller = context.createUnmarshaller();
 
@@ -52,14 +52,14 @@ public class FileManager
 		    }
 
 
-	      public Pattern read() throws JAXBException
+	      public GolPattern read() throws JAXBException
 		    {
 
 				        Object obj = unMarshaller.unmarshal(xmlFile);
-				        if (obj instanceof Pattern)
+				        if (obj instanceof GolPattern)
 					      {
 
-						    return (Pattern) obj;
+						    return (GolPattern) obj;
 					      }
 		
 

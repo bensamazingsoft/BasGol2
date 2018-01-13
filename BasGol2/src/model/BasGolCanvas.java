@@ -29,8 +29,8 @@ public class BasGolCanvas extends Canvas
 	    private int				    startXFrame;
 	    private int				    startYFrame;
 	    private SimpleIntegerProperty	    cellCountIntProp = new SimpleIntegerProperty(0);
-	    private Pattern			    pattern	     = new Pattern();
-	    private Pattern			    ghostPattern     = new Pattern();
+	    private GolPattern			    pattern	     = new GolPattern();
+	    private GolPattern			    ghostPattern     = new GolPattern();
 	    private boolean[][]			    grid;
 	    private boolean			    selectionMode    = false;
 	    private boolean			    gridOn	     = false;
@@ -54,7 +54,7 @@ public class BasGolCanvas extends Canvas
 			this.setOnDragOver(new DragOverControls());
 			this.setOnDragDropped(new DragDroppedControls());
 
-			pattern = new Pattern();
+			pattern = new GolPattern();
 			pattern.setName("temp");
 
 			graphic = this.getGraphicsContext2D();
@@ -87,25 +87,25 @@ public class BasGolCanvas extends Canvas
 
 	    public void stepForward()
 		  {
-			
+
 			history.add(new HashMap<Coord, Boolean>(pattern.getCoords()));
-			
+
 			// store black cells position and all white
 			// cells surrounding (as only those have a
 			// chance to go black)
 			pattern.getCoords().forEach((coord, bool) -> {
+
 			      int x = coord.getX();
 			      int y = coord.getY();
 
-			      toTest.add(new Coord(x - 1, y - 1));
-			      toTest.add(new Coord(x - 1, y));
-			      toTest.add(new Coord(x - 1, y + 1));
-			      toTest.add(coord);
-			      toTest.add(new Coord(x, y - 1));
-			      toTest.add(new Coord(x, y + 1));
-			      toTest.add(new Coord(x + 1, y - 1));
-			      toTest.add(new Coord(x + 1, y));
-			      toTest.add(new Coord(x + 1, y + 1));
+			      for (int i = -1; i < 2; i++)
+				    {
+					  for (int j = -1; j < 2; j++)
+						{
+
+						      toTest.add(new Coord(x + i, y + j));
+						}
+				    }
 
 			});
 
@@ -121,7 +121,6 @@ public class BasGolCanvas extends Canvas
 
 			drawGrid();
 
-			
 		  }
 
 
@@ -142,6 +141,9 @@ public class BasGolCanvas extends Canvas
 
 	    // count black cells around tested position in grid and apply
 	    // game of life rules to cell in buffer
+	    /**
+	     * @param coord
+	     */
 	    private void testPosition(Coord coord)
 		  {
 
@@ -151,53 +153,22 @@ public class BasGolCanvas extends Canvas
 			int count = 0;
 
 			// catch ArrayIndexOutOfBoundsException but do nothing cause result is still ok
-			try
+
+			for (int a = -1; a <= 1; a++)
 			      {
-				    count += (grid[x - 1][y - 1]) ? 1 : 0;
-			      } catch (ArrayIndexOutOfBoundsException e)
-			      {
-			      }
-			try
-			      {
-				    count += (grid[x - 1][y]) ? 1 : 0;
-			      } catch (ArrayIndexOutOfBoundsException e)
-			      {
-			      }
-			try
-			      {
-				    count += (grid[x - 1][y + 1]) ? 1 : 0;
-			      } catch (ArrayIndexOutOfBoundsException e)
-			      {
-			      }
-			try
-			      {
-				    count += (grid[x][y - 1]) ? 1 : 0;
-			      } catch (ArrayIndexOutOfBoundsException e)
-			      {
-			      }
-			try
-			      {
-				    count += (grid[x][y + 1]) ? 1 : 0;
-			      } catch (ArrayIndexOutOfBoundsException e)
-			      {
-			      }
-			try
-			      {
-				    count += (grid[x + 1][y - 1]) ? 1 : 0;
-			      } catch (ArrayIndexOutOfBoundsException e)
-			      {
-			      }
-			try
-			      {
-				    count += (grid[x + 1][y]) ? 1 : 0;
-			      } catch (ArrayIndexOutOfBoundsException e)
-			      {
-			      }
-			try
-			      {
-				    count += (grid[x + 1][y + 1]) ? 1 : 0;
-			      } catch (ArrayIndexOutOfBoundsException e)
-			      {
+				    for (int b = -1; b <= 1; b++)
+					  {
+						if (!(a == 0 && b == 0))
+						      {
+							    try
+								  {
+									count += (grid[x + a][y + b]) ? 1 : 0;
+
+								  } catch (ArrayIndexOutOfBoundsException e)
+								  {
+								  }
+						      }
+					  }
 			      }
 
 			if ((count < 2 || count > 3) && (x < grid.length && y < grid[x].length))
@@ -208,7 +179,7 @@ public class BasGolCanvas extends Canvas
 			      {
 				    pattern.getCoords().put(new Coord(x, y), true);
 			      }
-			count = 0;
+
 		  }
 
 
@@ -239,19 +210,19 @@ public class BasGolCanvas extends Canvas
 
 			// Keep only black cells for next step
 			pattern.getCoords().entrySet().removeIf(entry -> !entry.getValue());
+			
+			cellCountIntProp.setValue(pattern.getCoords().values().size());
 
 			// draw selection, if any
 			if (!selection.getCoords().isEmpty())
 			      {
 				    graphic.setFill(Color.rgb(255, 0, 0, 0.2));
-				    selection.getCoords().forEach(coord -> {
 
-					  graphic.fillRect(coord.getX() * xCell, coord.getY() * xCell, xCell, xCell);
-				    });
+				    graphic.fillRect(selection.getFrom().getX() * xCell, selection.getFrom().getY() * xCell, ((selection.getTo().getX() + 1) - selection.getFrom().getX()) * xCell,
+						((selection.getTo().getY() + 1) - selection.getFrom().getY()) * xCell);
 
 			      }
 
-			cellCountIntProp.setValue(pattern.getCoords().values().size());
 
 			// draw ghost, if any
 			if (!ghostPattern.getCoords().isEmpty())
@@ -417,7 +388,7 @@ public class BasGolCanvas extends Canvas
 					  {
 						evt.acceptTransferModes(TransferMode.ANY);
 						Coord ghostOg = new Coord((int) evt.getX() / xCell, (int) evt.getY() / xCell);
-						ghostPattern = (Pattern) evt.getDragboard().getContent(PatternFrame.dataFormat);
+						ghostPattern = (GolPattern) evt.getDragboard().getContent(PatternFrame.dataFormat);
 						ghostPattern.shiftOrigin(ghostOg);
 
 						drawGrid();
@@ -448,7 +419,7 @@ public class BasGolCanvas extends Canvas
 
 						});
 
-						ghostPattern = new Pattern();
+						ghostPattern = new GolPattern();
 
 						drawGrid();
 
@@ -507,7 +478,7 @@ public class BasGolCanvas extends Canvas
 	    /**
 	     * @return the pattern
 	     */
-	    public Pattern getPattern()
+	    public GolPattern getPattern()
 		  {
 
 			return pattern;
@@ -518,7 +489,7 @@ public class BasGolCanvas extends Canvas
 	     * @param pattern
 	     *              the pattern to set
 	     */
-	    public void setPattern(Pattern pattern)
+	    public void setPattern(GolPattern pattern)
 		  {
 
 			this.pattern = pattern;

@@ -36,11 +36,15 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import model.BasGolCanvas;
 import model.Coord;
 import model.ErrorAlert;
-import model.Pattern;
+import model.GolPattern;
+import model.InputTextAlert;
+import model.InvalidRleException;
 import model.PatternFrame;
 import model.Selection;
 import xml.FileManager;
@@ -49,14 +53,31 @@ public class Main extends Application
       {
 
 	    // fields
-	    private static final String	VERSION	     = "v0.1";
-	    private static final String	TITLE	     = "Ben's Amazing Soft - Game of Life 2 " + VERSION;
-	    private final int		SLEEPTIME    = 100;
-	    private final int		XSTARTFRAME  = 900;
-	    private final int		YSTARTFRAME  = 600;
-	    private Path		gridFilesDir = Paths.get(".\\grid_files\\");
+	    private static final String	VERSION	       = "v0.1";
+	    private static final String	TITLE	       = "Ben's Amazing Soft - Game of Life 2 " + VERSION;
+	    private final int		SLEEPTIME      = 100;
+	    private final int		XSTARTFRAME    = 900;
+	    private final int		YSTARTFRAME    = 600;
+	    private Path		gridFilesDir   = Paths.get(".\\grid_files\\");
 	    private int			xFrame, yFrame, xGrid, yGrid;
-	    private IntegerProperty	steps	     = new SimpleIntegerProperty(0);
+	    private IntegerProperty	steps	       = new SimpleIntegerProperty(0);
+
+	    private final ImageView	SELECT_ICON    = new ImageView("./images/selectIcon.png");
+	    private final ImageView	SELECT_ICON_ON = new ImageView("./images/selectIconOn.png");
+	    private final ImageView	MOVE_ICON      = new ImageView("./images/moveIcon.png");
+	    private final ImageView	MOVE_ICON_ON   = new ImageView("./images/moveIconOn.png");
+	    private final ImageView	SAVE_ICON      = new ImageView("./images/saveIcon.png");
+	    private final ImageView	GRIDON_ICON    = new ImageView("./images/gridOnIcon.png");
+
+	    private final ImageView	GRIDON_ICON_ON = new ImageView("./images/gridOnIconOn.png");
+
+	    private final ImageView	CLEAR_ICON     = new ImageView("./images/clearIcon.png");
+	    private final ImageView	FORWARD_ICON   = new ImageView("./images/forwardIcon.png");
+	    private final ImageView	BACKWARD_ICON  = new ImageView("./images/backwardIcon.png");
+	    private final ImageView	PLAY_ICON      = new ImageView("./images/playIcon.png");
+	    private final ImageView	PLAYBACK_ICON  = new ImageView("./images/playBackIcon.png");
+	    private final ImageView	STOP_ICON      = new ImageView("./images/stopIcon.png");
+	    private final ImageView	IMPORT_ICON    = new ImageView("./images/importIcon.png");
 
 	    // enum
 	    private enum tools
@@ -64,25 +85,25 @@ public class Main extends Application
 		  DEFAULT, CLEAR, FILL, SAVE, SELECT, PAN
 		  }
 
-	    private tools		  tool	     = tools.DEFAULT;
+	    private tools		    tool       = tools.DEFAULT;
 
 	    // collections
-	    private DirectoryStream<Path> dirStream;
-	    private Map<String, Pattern>  patterns   = new HashMap<>();
+	    private DirectoryStream<Path>   dirStream;
+	    private Map<String, GolPattern> patterns   = new HashMap<>();
 
 	    // javafx Parent and nodes
-	    private Scene		  scene;
-	    private BorderPane		  root	     = new BorderPane();
-	    private ScrollPane		  patternsSp;
+	    private Scene		    scene;
+	    private BorderPane		    root       = new BorderPane();
+	    private ScrollPane		    patternsSp;
 
-	    private ScrollPane		  scrollP    = new ScrollPane();
-	    private VBox		  patternsVb = new VBox();
-	    private BasGolCanvas	  frame	     = new BasGolCanvas();
-	    private VBox		  info;
-	    private Button		  selectBut, panBut, saveBut, gridOnBut, clearBut, forwardBut, backwardBut, playBut, playBackBut;
-	    private ToolBar		  toolBar;
-	    private Boolean		  play	     = false;
-	    private Boolean		  playBack   = false;
+	    private ScrollPane		    scrollP    = new ScrollPane();
+	    private VBox		    patternsVb = new VBox();
+	    private BasGolCanvas	    frame      = new BasGolCanvas();
+	    private VBox		    info;
+	    private Button		    selectBut, panBut, saveBut, gridOnBut, clearBut, forwardBut, backwardBut, playBut, playBackBut, importBut;
+	    private ToolBar		    toolBar;
+	    private Boolean		    play       = false;
+	    private Boolean		    playBack   = false;
 
 
 	    @Override
@@ -137,26 +158,28 @@ public class Main extends Application
 
 			// Setup tooolbar
 
-			selectBut = new Button("", new ImageView("./images/selectIcon.png"));
+			selectBut = new Button("", SELECT_ICON);
 			selectBut.setOnAction((evt) -> toggleSelect());
-			panBut = new Button("", new ImageView("./images/moveIcon.png"));
+			panBut = new Button("", MOVE_ICON);
 			panBut.setOnAction(evt -> togglePan());
-			gridOnBut = new Button("", new ImageView("./images/gridOnIcon.png"));
+			gridOnBut = new Button("", GRIDON_ICON);
 			gridOnBut.setOnAction(evt -> toggleGridLines());
-			saveBut = new Button("", new ImageView("./images/saveIcon.png"));
+			saveBut = new Button("", SAVE_ICON);
 			saveBut.setOnAction(evt -> savePattern());
-			clearBut = new Button("", new ImageView("./images/clearIcon.png"));
+			clearBut = new Button("", CLEAR_ICON);
 			clearBut.setOnAction(evt -> clearGrid());
-			forwardBut = new Button("", new ImageView("./images/forwardIcon.png"));
+			forwardBut = new Button("", FORWARD_ICON);
 			forwardBut.setOnAction(evt -> forward());
-			backwardBut = new Button("", new ImageView("./images/backwardIcon.png"));
+			backwardBut = new Button("", BACKWARD_ICON);
 			backwardBut.setOnAction(evt -> backward());
-			playBut = new Button("", new ImageView("./images/playIcon.png"));
+			playBut = new Button("", PLAY_ICON);
 			playBut.setOnAction(evt -> play());
-			playBackBut = new Button("", new ImageView("./images/playBackIcon.png"));
+			playBackBut = new Button("", PLAYBACK_ICON);
 			playBackBut.setOnAction(evt -> playBack());
+			importBut = new Button("", IMPORT_ICON);
+			importBut.setOnAction(evt -> importRLE());
 
-			toolBar = new ToolBar(selectBut, panBut, gridOnBut, saveBut, clearBut, backwardBut, playBackBut, playBut, forwardBut);
+			toolBar = new ToolBar(selectBut, panBut, gridOnBut, saveBut, clearBut, importBut, backwardBut, playBackBut, playBut, forwardBut);
 
 			root.setTop(toolBar);
 
@@ -200,7 +223,7 @@ public class Main extends Application
 										    alert.hide();
 										    alert.show();
 										    File file = path.toFile();
-										    Pattern pattern = new FileManager(file).read();
+										    GolPattern pattern = new FileManager(file).read();
 										    PatternFrame patternFrame = new PatternFrame(pattern);
 										    Button delBut = new Button("", new ImageView("./images/deleteIcon.png"));
 										    delBut.setPadding(new Insets(0, 0, 0, 0));
@@ -322,7 +345,8 @@ public class Main extends Application
 												      new Selection(new Coord(0, 0), new Coord(frame.getGrid().length, frame.getGrid()[0].length)));
 										    }
 
-									      Pattern pattern = selectionToPattern(event.isControlDown() ? new InputTextAlert("Enter Pattern name").reponse() : "temp");
+									      GolPattern pattern = selectionToPattern(
+											  event.isControlDown() ? new InputTextAlert("Enter Pattern name").reponse() : "temp");
 									      new FileManager(pattern).write();
 									} catch (JAXBException e)
 									{
@@ -375,10 +399,10 @@ public class Main extends Application
 		  }
 
 
-	    public Pattern selectionToPattern(String name)
+	    public GolPattern selectionToPattern(String name)
 		  {
 
-			Pattern pattern = new Pattern();
+			GolPattern pattern = new GolPattern();
 			pattern.setName(name);
 
 			pattern.setxSize(frame.getSelection().getxSize());
@@ -475,9 +499,10 @@ public class Main extends Application
 
 			scrollP.setPannable(!scrollP.isPannable());
 			frame.setMouseTransparent(!frame.isMouseTransparent());
-			scrollP.setCursor(scrollP.isPannable() ? Cursor.MOVE : Cursor.DEFAULT);
+			scrollP.setCursor(scrollP.isPannable() ? Cursor.MOVE : frame.isSelectionMode() ? Cursor.CROSSHAIR : Cursor.DEFAULT);
 
 			tool = scrollP.isPannable() ? tools.PAN : tools.DEFAULT;
+			panBut.setGraphic(scrollP.isPannable() ? MOVE_ICON_ON : MOVE_ICON);
 		  }
 
 
@@ -500,7 +525,7 @@ public class Main extends Application
 							    frame.setSelection(new Selection(new Coord(0, 0), new Coord(frame.getGrid().length, frame.getGrid()[0].length)));
 						      }
 
-						Pattern pattern = selectionToPattern(newName);
+						GolPattern pattern = selectionToPattern(newName);
 						new FileManager(pattern).write();
 					  } catch (JAXBException e)
 					  {
@@ -524,7 +549,7 @@ public class Main extends Application
 			      {
 				    try
 					  {
-						FileManager fileManager = new FileManager(new Pattern("temp", frame.getGrid().length, frame.getGrid()[0].length, frame.getPattern().getCoords()));
+						FileManager fileManager = new FileManager(new GolPattern("temp", frame.getGrid().length, frame.getGrid()[0].length, frame.getPattern().getCoords()));
 
 						frame.getPattern().getCoords().clear();
 						frame.drawGrid();
@@ -555,6 +580,7 @@ public class Main extends Application
 						frame.drawGrid();
 					  }
 				    tool = frame.isSelectionMode() ? tools.SELECT : tools.DEFAULT;
+				    selectBut.setGraphic(frame.isSelectionMode() ? SELECT_ICON_ON : SELECT_ICON);
 			      }
 		  }
 
@@ -567,6 +593,8 @@ public class Main extends Application
 
 			frame.setGridOn(!frame.isGridOn());
 			frame.drawGrid();
+
+			gridOnBut.setGraphic(frame.isGridOn() ? GRIDON_ICON_ON : GRIDON_ICON);
 		  }
 
 
@@ -599,6 +627,7 @@ public class Main extends Application
 	    private void play()
 		  {
 
+			playBut.setGraphic(STOP_ICON);
 			playBack = false;
 			play = !play;
 
@@ -634,8 +663,12 @@ public class Main extends Application
 								  });
 
 							    if (!play)
-								  break;
-
+								  {
+									Platform.runLater(() -> {
+									      playBut.setGraphic(PLAY_ICON);
+									});
+									break;
+								  }
 						      }
 					  }
 			      }).start();
@@ -647,6 +680,8 @@ public class Main extends Application
 
 			play = false;
 			playBack = !playBack;
+
+			playBackBut.setGraphic(STOP_ICON);
 
 			// playBack infinite loop
 			new Thread(new Runnable()
@@ -680,10 +715,43 @@ public class Main extends Application
 								  });
 
 							    if (!playBack)
-								  break;
-
+								  {
+									Platform.runLater(() -> {
+									      playBackBut.setGraphic(PLAYBACK_ICON);
+									});
+									break;
+								  }
 						      }
 					  }
 			      }).start();
 		  }
+
+
+	    private void importRLE()
+		  {
+
+			FileChooser chooser = new FileChooser();
+
+			chooser.setTitle("Please select .rle file to import");
+			chooser.setSelectedExtensionFilter(new ExtensionFilter("RLE", "*.rle"));
+
+			File rleFile = chooser.showOpenDialog(null);
+
+			if (rleFile != null && rleFile.exists())
+			      {
+				    GolPattern pattern;
+				    try
+					  {
+						pattern = new GolPattern(rleFile);
+						new FileManager(pattern).write();
+						
+					  } catch (InvalidRleException | JAXBException e)
+					  {
+						new ErrorAlert(e);
+					  }
+				    loadGridFiles();
+			      }
+
+		  }
+
       }
