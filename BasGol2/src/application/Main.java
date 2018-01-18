@@ -13,23 +13,27 @@ import java.util.Map;
 
 import javax.xml.bind.JAXBException;
 
+import alert.ErrorAlert;
+import alert.InputTextAlert;
+import exceptions.InvalidRleException;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.ToolBar;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
@@ -39,14 +43,11 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
-import model.BasGolCanvas;
 import model.Coord;
-import model.ErrorAlert;
 import model.GolPattern;
-import model.InputTextAlert;
-import model.InvalidRleException;
-import model.PatternFrame;
 import model.Selection;
+import uiElements.BasGolCanvas;
+import uiElements.PatternFrame;
 import xml.FileManager;
 
 public class Main extends Application
@@ -61,23 +62,24 @@ public class Main extends Application
 	    private Path		gridFilesDir   = Paths.get(".\\grid_files\\");
 	    private int			xFrame, yFrame, xGrid, yGrid;
 	    private IntegerProperty	steps	       = new SimpleIntegerProperty(0);
+	    SimpleStringProperty	infoText       = new SimpleStringProperty();
+	    private Boolean		play	       = false;
+	    private Boolean		playBack       = false;
 
-	    private final ImageView	SELECT_ICON    = new ImageView("./images/selectIcon.png");
-	    private final ImageView	SELECT_ICON_ON = new ImageView("./images/selectIconOn.png");
-	    private final ImageView	MOVE_ICON      = new ImageView("./images/moveIcon.png");
-	    private final ImageView	MOVE_ICON_ON   = new ImageView("./images/moveIconOn.png");
-	    private final ImageView	SAVE_ICON      = new ImageView("./images/saveIcon.png");
-	    private final ImageView	GRIDON_ICON    = new ImageView("./images/gridOnIcon.png");
-
-	    private final ImageView	GRIDON_ICON_ON = new ImageView("./images/gridOnIconOn.png");
-
-	    private final ImageView	CLEAR_ICON     = new ImageView("./images/clearIcon.png");
-	    private final ImageView	FORWARD_ICON   = new ImageView("./images/forwardIcon.png");
-	    private final ImageView	BACKWARD_ICON  = new ImageView("./images/backwardIcon.png");
-	    private final ImageView	PLAY_ICON      = new ImageView("./images/playIcon.png");
-	    private final ImageView	PLAYBACK_ICON  = new ImageView("./images/playBackIcon.png");
-	    private final ImageView	STOP_ICON      = new ImageView("./images/stopIcon.png");
-	    private final ImageView	IMPORT_ICON    = new ImageView("./images/importIcon.png");
+	    private final ImageView	SELECT_ICON    = new ImageView(new Image(getClass().getResourceAsStream("/images/selectIcon.png")));
+	    private final ImageView	SELECT_ICON_ON = new ImageView(new Image(getClass().getResourceAsStream("/images/selectIconOn.png")));
+	    private final ImageView	MOVE_ICON      = new ImageView(new Image(getClass().getResourceAsStream("/images/moveIcon.png")));
+	    private final ImageView	MOVE_ICON_ON   = new ImageView(new Image(getClass().getResourceAsStream("/images/moveIconOn.png")));
+	    private final ImageView	SAVE_ICON      = new ImageView(new Image(getClass().getResourceAsStream("/images/saveIcon.png")));
+	    private final ImageView	GRIDON_ICON    = new ImageView(new Image(getClass().getResourceAsStream("/images/gridOnIcon.png")));
+	    private final ImageView	GRIDON_ICON_ON = new ImageView(new Image(getClass().getResourceAsStream("/images/gridOnIconOn.png")));
+	    private final ImageView	CLEAR_ICON     = new ImageView(new Image(getClass().getResourceAsStream("/images/clearIcon.png")));
+	    private final ImageView	FORWARD_ICON   = new ImageView(new Image(getClass().getResourceAsStream("/images/forwardIcon.png")));
+	    private final ImageView	BACKWARD_ICON  = new ImageView(new Image(getClass().getResourceAsStream("/images/backwardIcon.png")));
+	    private final ImageView	PLAY_ICON      = new ImageView(new Image(getClass().getResourceAsStream("/images/playIcon.png")));
+	    private final ImageView	PLAYBACK_ICON  = new ImageView(new Image(getClass().getResourceAsStream("/images/playBackIcon.png")));
+	    private final ImageView	STOP_ICON      = new ImageView(new Image(getClass().getResourceAsStream("/images/stopIcon.png")));
+	    private final ImageView	IMPORT_ICON    = new ImageView(new Image(getClass().getResourceAsStream("/images/importIcon.png")));
 
 	    // enum
 	    private enum tools
@@ -85,30 +87,32 @@ public class Main extends Application
 		  DEFAULT, CLEAR, FILL, SAVE, SELECT, PAN
 		  }
 
-	    private tools		    tool       = tools.DEFAULT;
+	    private tools		    tool	= tools.DEFAULT;
 
 	    // collections
 	    private DirectoryStream<Path>   dirStream;
-	    private Map<String, GolPattern> patterns   = new HashMap<>();
+	    private Map<String, GolPattern> patterns	= new HashMap<>();
 
 	    // javafx Parent and nodes
+	    private Stage		    stage;
 	    private Scene		    scene;
-	    private BorderPane		    root       = new BorderPane();
+	    private BorderPane		    root	= new BorderPane();
 	    private ScrollPane		    patternsSp;
-
-	    private ScrollPane		    scrollP    = new ScrollPane();
-	    private VBox		    patternsVb = new VBox();
-	    private BasGolCanvas	    frame      = new BasGolCanvas();
+	    private ScrollPane		    scrollP	= new ScrollPane();
+	    private VBox		    patternsVb	= new VBox();
+	    private BasGolCanvas	    frame	= new BasGolCanvas();
 	    private VBox		    info;
 	    private Button		    selectBut, panBut, saveBut, gridOnBut, clearBut, forwardBut, backwardBut, playBut, playBackBut, importBut;
 	    private ToolBar		    toolBar;
-	    private Boolean		    play       = false;
-	    private Boolean		    playBack   = false;
+	    private Label		    progressLbl	= new Label("");
+	    private HBox		    progressHb	= new HBox(progressLbl);
 
 
 	    @Override
 	    public void start(Stage stage)
 		  {
+
+			this.stage = stage;
 
 			xFrame = xGrid = XSTARTFRAME;
 			yFrame = yGrid = YSTARTFRAME;
@@ -183,6 +187,8 @@ public class Main extends Application
 
 			root.setTop(toolBar);
 
+			root.setBottom(progressHb);
+
 			scene = new Scene(root);
 			scene.addEventFilter(KeyEvent.ANY, new KeyControls());
 			stage.setTitle(TITLE);
@@ -192,67 +198,107 @@ public class Main extends Application
 		  }
 
 
-	    /**
-	     * 
-	     */
 	    private void loadGridFiles()
 		  {
 
-			patternsVb.getChildren().clear();
-			patterns.clear();
-
-			if (gridFilesDir.toFile().exists())
+			Task<Void> task = new Task<Void>()
 			      {
-				    try
+
+				    @Override
+				    protected Void call() throws Exception
 					  {
-						dirStream = Files.newDirectoryStream(gridFilesDir, "*.xml");
 
-						if (gridFilesDir.toFile().list().length != 0)
+						patterns.clear();
+
+						if (gridFilesDir.toFile().exists())
 						      {
-							    Alert alert = new Alert(AlertType.INFORMATION, "Loading files ");
-							    alert.show();
-
-							    Iterator<Path> it = dirStream.iterator();
-							    while (it.hasNext())
+							    try
 								  {
+									dirStream = Files.newDirectoryStream(gridFilesDir, "*.xml");
 
-									Path path = it.next();
-									if (!path.toFile().getName().contains("temp.xml"))
+									if (gridFilesDir.toFile().list().length != 0)
 									      {
-										    alert.setContentText(alert.getContentText() + "\n\t- " + path.toString());
-										    alert.hide();
-										    alert.show();
-										    File file = path.toFile();
-										    GolPattern pattern = new FileManager(file).read();
-										    PatternFrame patternFrame = new PatternFrame(pattern);
-										    Button delBut = new Button("", new ImageView("./images/deleteIcon.png"));
-										    delBut.setPadding(new Insets(0, 0, 0, 0));
-										    delBut.setOnAction(e -> {
-											  try
-												{
-												      Files.delete(path);
-												      Files.delete(Paths.get(path.toFile().getAbsolutePath().replaceAll(".xml", ".png")));
-												} catch (IOException e1)
-												{
-												      new ErrorAlert(e1);
-												}
-											  patternsVb.getChildren().remove(patternFrame);
-										    });
-										    patterns.put(pattern.getName(), pattern);
-										    patternFrame.getTopBut().getChildren().add(delBut);
-										    patternsVb.getChildren().add(patternFrame);
+
+										    Iterator<Path> it = dirStream.iterator();
+										    while (it.hasNext())
+											  {
+
+												Path path = it.next();
+												if (!path.toFile().getName().contains("temp.xml"))
+												      {
+													    Thread.sleep(50);
+													    updateMessage("Loading file " + path.toFile().getAbsolutePath());
+													    File file = path.toFile();
+													    GolPattern pattern = new FileManager(file).read();
+													    patterns.put(pattern.getName(), pattern);
+
+												      }
+
+											  }
 
 									      }
-
+								  } catch (Exception e)
+								  {
+									new ErrorAlert(e);
+									e.printStackTrace();
 								  }
-							    alert.hide();
 						      }
-					  } catch (Exception e)
-					  {
-						new ErrorAlert(e);
-						e.printStackTrace();
+
+						return null;
 					  }
-			      }
+
+
+				    @Override
+				    protected void succeeded()
+					  {
+
+						updateMessage("Loading O.K");
+						buildPatternSp();
+					  }
+			      };
+
+			progressLbl.textProperty().bind(task.messageProperty());
+			new Thread(task).start();
+		  }
+
+
+	    /**
+	     * 
+	     */
+	    private void buildPatternSp()
+		  {
+
+			patternsVb.getChildren().clear();
+			patterns.forEach((name, pattern) -> {
+
+			      try
+				    {
+
+					  final PatternFrame patternFrame = new PatternFrame(pattern);
+
+					  Button delBut = new Button("", new ImageView(new Image(getClass().getResourceAsStream("/images/deleteIcon.png"))));
+					  delBut.setPadding(new Insets(0, 0, 0, 0));
+					  delBut.setOnAction(e -> {
+						try
+						      {
+							    Path path = Paths.get(gridFilesDir.toFile().getAbsolutePath() + "\\" + name + ".xml");
+							    Files.delete(path);
+							    Files.delete(Paths.get(path.toFile().getAbsolutePath().replaceAll(".xml", ".png")));
+						      } catch (IOException e1)
+						      {
+							    new ErrorAlert(e1);
+						      }
+						patternsVb.getChildren().remove(patternFrame);
+						patterns.remove(name);
+					  });
+					  patternFrame.getTopBut().getChildren().add(delBut);
+					  patternsVb.getChildren().add(patternFrame);
+
+				    } catch (Exception e)
+				    {
+					  new ErrorAlert(e);
+				    }
+			});
 		  }
 
 
@@ -449,14 +495,25 @@ public class Main extends Application
 			double centerPosX = (contentSize.getWidth() - viewPort.getWidth()) * scrollP.getHvalue() + viewPort.getWidth() / 2;
 			double centerPosY = (contentSize.getHeight() - viewPort.getHeight()) * scrollP.getVvalue() + viewPort.getHeight() / 2;
 
+			System.out.println("centerPosX : " + centerPosX);
+			System.out.println("centerPosY : " + centerPosY);
+			System.out.println("Hvalue : " + scrollP.getHvalue());
+			System.out.println("Vvalue : " + scrollP.getVvalue());
+			
 			frame.zoomIn();
 
-			double newCenterX = centerPosX * frame.getResizer();
-			double newCenterY = centerPosY * frame.getResizer();
+			double newCenterX = centerPosX * frame.getResizer()/(frame.getResizer()-1);
+			double newCenterY = centerPosY * frame.getResizer()/(frame.getResizer()-1);
 
-			scrollP.setHvalue((newCenterX - viewPort.getWidth() / 2) / (contentSize.getWidth() * frame.getResizer() - viewPort.getWidth()));
-			scrollP.setVvalue((newCenterY - viewPort.getHeight() / 2) / (contentSize.getHeight() * frame.getResizer() - viewPort.getHeight()));
+			System.out.println("newCenterPosX : " + newCenterX);
+			System.out.println("newCenterPosY : " + newCenterY);
+			
+			scrollP.setHvalue((newCenterX - viewPort.getWidth() / 2) / (contentSize.getWidth() * frame.getResizer()/(frame.getResizer()-1) - viewPort.getWidth()));
+			scrollP.setVvalue((newCenterY - viewPort.getHeight() / 2) / (contentSize.getHeight() * frame.getResizer()/(frame.getResizer()-1) - viewPort.getHeight()));
 
+			System.out.println("new Hvalue : " + scrollP.getHvalue());
+			System.out.println("new Vvalue : " + scrollP.getVvalue());
+			
 		  }
 
 
@@ -471,11 +528,11 @@ public class Main extends Application
 
 			frame.zoomOut();
 
-			double newCenterX = centerPosX * frame.getResizer();
-			double newCenterY = centerPosY * frame.getResizer();
+			double newCenterX = centerPosX * frame.getResizer()/(frame.getResizer()+1);
+			double newCenterY = centerPosY * frame.getResizer()/(frame.getResizer()+1);
 
-			scrollP.setHvalue((newCenterX - viewPort.getWidth() / 2) / (contentSize.getWidth() * frame.getResizer() - viewPort.getWidth()));
-			scrollP.setVvalue((newCenterY - viewPort.getHeight() / 2) / (contentSize.getHeight() * frame.getResizer() - viewPort.getHeight()));
+			scrollP.setHvalue((newCenterX - viewPort.getWidth() / 2) / (contentSize.getWidth() * frame.getResizer()/(frame.getResizer()+1) - viewPort.getWidth()));
+			scrollP.setVvalue((newCenterY - viewPort.getHeight() / 2) / (contentSize.getHeight() * frame.getResizer()/(frame.getResizer()+1) - viewPort.getHeight()));
 
 		  }
 
@@ -703,16 +760,9 @@ public class Main extends Application
 								  }
 
 							    // run in javafx gui thread
-							    Platform.runLater(new Runnable()
-								  {
-
-									@Override
-									public void run()
-									      {
-
-										    backward();
-									      }
-								  });
+							    Platform.runLater(() -> {
+								  backward();
+							    });
 
 							    if (!playBack)
 								  {
@@ -734,22 +784,24 @@ public class Main extends Application
 
 			chooser.setTitle("Please select .rle file to import");
 			chooser.setSelectedExtensionFilter(new ExtensionFilter("RLE", "*.rle"));
+			chooser.setInitialDirectory(new File("./rle_patterns"));
 
-			File rleFile = chooser.showOpenDialog(null);
+			File rleFile = chooser.showOpenDialog(stage);
 
 			if (rleFile != null && rleFile.exists())
 			      {
-				    GolPattern pattern;
 				    try
 					  {
+						GolPattern pattern;
 						pattern = new GolPattern(rleFile);
 						new FileManager(pattern).write();
-						
+
+						loadGridFiles();
+
 					  } catch (InvalidRleException | JAXBException e)
 					  {
 						new ErrorAlert(e);
 					  }
-				    loadGridFiles();
 			      }
 
 		  }

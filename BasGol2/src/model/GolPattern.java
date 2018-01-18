@@ -14,6 +14,9 @@ import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
+import alert.ErrorAlert;
+import exceptions.InvalidRleException;
+
 @XmlRootElement
 public class GolPattern implements Serializable
       {
