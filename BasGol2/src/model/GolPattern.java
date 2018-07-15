@@ -108,11 +108,12 @@ public class GolPattern implements Serializable
 
 			// read live cells coordinates for each rows
 			String[] rows = matchResults.containsKey(COORDS) ? matchResults.get(COORDS).split("\\$") : new String[0];
+			
 			int y = 0;
 			for (int rowId = 0; rowId < rows.length; rowId++)
 			      {
 				    int index = 0;
-
+				    System.out.println(rows[rowId]);
 				    Matcher matcher = Pattern.compile("\\d*[ob]").matcher(rows[rowId]);
 				    Matcher endOfRow = Pattern.compile("\\d+$").matcher(rows[rowId]);
 
@@ -129,9 +130,10 @@ public class GolPattern implements Serializable
 						index += delta;
 					  }
 				    // add blank lines if needed
-				    while (endOfRow.find())
+				    if (endOfRow.find())
 					  {
 						y += Integer.valueOf(endOfRow.group()) - 1;
+						
 					  }
 				    y++;
 			      }
@@ -143,7 +145,6 @@ public class GolPattern implements Serializable
 
 			String str = "";
 			BufferedReader br = new BufferedReader(new FileReader(rleFile));
-
 			StringBuilder sb = new StringBuilder();
 			String line = br.readLine();
 
@@ -192,7 +193,7 @@ public class GolPattern implements Serializable
 
 			coords.forEach((coord, bool) -> {
 
-			      tempCoords.put(new Coord(coord.getX() + ghostOg.getX(), coord.getY() + ghostOg.getY()), bool);
+			      tempCoords.put(new Coord(coord.getX() + ghostOg.getX() - xSize / 2, coord.getY() + ghostOg.getY() - ySize / 2), bool);
 
 			});
 

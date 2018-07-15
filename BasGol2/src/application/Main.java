@@ -1,6 +1,7 @@
 
 package application;
 
+//{{{ fold start
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -10,8 +11,15 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBException;
+
+import org.reflections.Reflections;
+import org.reflections.scanners.ResourcesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 
 import alert.ErrorAlert;
 import alert.InputTextAlert;
@@ -20,7 +28,6 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
@@ -49,37 +56,41 @@ import model.Selection;
 import uiElements.BasGolCanvas;
 import uiElements.PatternFrame;
 import xml.FileManager;
+//}}} 
+
 
 public class Main extends Application
       {
 
 	    // fields
-	    private static final String	VERSION	       = "v0.1";
-	    private static final String	TITLE	       = "Ben's Amazing Soft - Game of Life 2 " + VERSION;
-	    private final int		SLEEPTIME      = 100;
-	    private final int		XSTARTFRAME    = 900;
-	    private final int		YSTARTFRAME    = 600;
-	    private Path		gridFilesDir   = Paths.get(".\\grid_files\\");
+	    private static final String	VERSION		 = "v1.0";
+	    private static final String	TITLE		 = "Ben's Amazing Soft - Game of Life 2 " + VERSION;
+	    private static final String	APP_SAVES_DIR	 = "grid_files";
+	    private static final Path	APP_SAVES_PATH	 = Paths.get(".\\" + APP_SAVES_DIR + "\\");
+	    private static final String	RLE_PATTERN_PACK = "rle_patterns";
+	    private static final File	RLE_PATTERNS_DIR = new File("./" + RLE_PATTERN_PACK);
+	    private static final int	SLEEPTIME	 = 100;
+	    private static final int	XSTARTFRAME	 = 900;
+	    private static final int	YSTARTFRAME	 = 600;
 	    private int			xFrame, yFrame, xGrid, yGrid;
-	    private IntegerProperty	steps	       = new SimpleIntegerProperty(0);
-	    SimpleStringProperty	infoText       = new SimpleStringProperty();
-	    private Boolean		play	       = false;
-	    private Boolean		playBack       = false;
+	    private IntegerProperty	steps		 = new SimpleIntegerProperty(0);
+	    private Boolean		play		 = false;
+	    private Boolean		playBack	 = false;
 
-	    private final ImageView	SELECT_ICON    = new ImageView(new Image(getClass().getResourceAsStream("/images/selectIcon.png")));
-	    private final ImageView	SELECT_ICON_ON = new ImageView(new Image(getClass().getResourceAsStream("/images/selectIconOn.png")));
-	    private final ImageView	MOVE_ICON      = new ImageView(new Image(getClass().getResourceAsStream("/images/moveIcon.png")));
-	    private final ImageView	MOVE_ICON_ON   = new ImageView(new Image(getClass().getResourceAsStream("/images/moveIconOn.png")));
-	    private final ImageView	SAVE_ICON      = new ImageView(new Image(getClass().getResourceAsStream("/images/saveIcon.png")));
-	    private final ImageView	GRIDON_ICON    = new ImageView(new Image(getClass().getResourceAsStream("/images/gridOnIcon.png")));
-	    private final ImageView	GRIDON_ICON_ON = new ImageView(new Image(getClass().getResourceAsStream("/images/gridOnIconOn.png")));
-	    private final ImageView	CLEAR_ICON     = new ImageView(new Image(getClass().getResourceAsStream("/images/clearIcon.png")));
-	    private final ImageView	FORWARD_ICON   = new ImageView(new Image(getClass().getResourceAsStream("/images/forwardIcon.png")));
-	    private final ImageView	BACKWARD_ICON  = new ImageView(new Image(getClass().getResourceAsStream("/images/backwardIcon.png")));
-	    private final ImageView	PLAY_ICON      = new ImageView(new Image(getClass().getResourceAsStream("/images/playIcon.png")));
-	    private final ImageView	PLAYBACK_ICON  = new ImageView(new Image(getClass().getResourceAsStream("/images/playBackIcon.png")));
-	    private final ImageView	STOP_ICON      = new ImageView(new Image(getClass().getResourceAsStream("/images/stopIcon.png")));
-	    private final ImageView	IMPORT_ICON    = new ImageView(new Image(getClass().getResourceAsStream("/images/importIcon.png")));
+	    private final ImageView	SELECT_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/selectIcon.png")));
+	    private final ImageView	SELECT_ICON_ON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/selectIconOn.png")));
+	    private final ImageView	MOVE_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/moveIcon.png")));
+	    private final ImageView	MOVE_ICON_ON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/moveIconOn.png")));
+	    private final ImageView	SAVE_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/saveIcon.png")));
+	    private final ImageView	GRIDON_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/gridOnIcon.png")));
+	    private final ImageView	GRIDON_ICON_ON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/gridOnIconOn.png")));
+	    private final ImageView	CLEAR_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/clearIcon.png")));
+	    private final ImageView	FORWARD_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/forwardIcon.png")));
+	    private final ImageView	BACKWARD_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/backwardIcon.png")));
+	    private final ImageView	PLAY_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/playIcon.png")));
+	    private final ImageView	PLAYBACK_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/playBackIcon.png")));
+	    private final ImageView	STOP_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/stopIcon.png")));
+	    private final ImageView	IMPORT_ICON	 = new ImageView(new Image(getClass().getResourceAsStream("/images/importIcon.png")));
 
 	    // enum
 	    private enum tools
@@ -111,6 +122,27 @@ public class Main extends Application
 	    @Override
 	    public void start(Stage stage)
 		  {
+
+			if (!RLE_PATTERNS_DIR.exists())
+			      {
+				    RLE_PATTERNS_DIR.mkdirs();
+
+				    Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage(RLE_PATTERN_PACK)).setScanners(new ResourcesScanner()));
+				    Set<String> resources = reflections.getResources(Pattern.compile(".*\\.rle"));
+
+				    resources.stream().forEach(filePath -> {
+
+					  try
+						{
+						      Files.copy(getClass().getResourceAsStream("/" + filePath), Paths.get(new File(filePath).toURI()));
+						} catch (IOException e)
+						{
+						      new ErrorAlert(e);
+						      e.printStackTrace();
+						}
+				    });
+
+			      }
 
 			this.stage = stage;
 
@@ -210,13 +242,13 @@ public class Main extends Application
 
 						patterns.clear();
 
-						if (gridFilesDir.toFile().exists())
+						if (APP_SAVES_PATH.toFile().exists())
 						      {
 							    try
 								  {
-									dirStream = Files.newDirectoryStream(gridFilesDir, "*.xml");
+									dirStream = Files.newDirectoryStream(APP_SAVES_PATH, "*.xml");
 
-									if (gridFilesDir.toFile().list().length != 0)
+									if (APP_SAVES_PATH.toFile().list().length != 0)
 									      {
 
 										    Iterator<Path> it = dirStream.iterator();
@@ -281,7 +313,7 @@ public class Main extends Application
 					  delBut.setOnAction(e -> {
 						try
 						      {
-							    Path path = Paths.get(gridFilesDir.toFile().getAbsolutePath() + "\\" + name + ".xml");
+							    Path path = Paths.get(APP_SAVES_PATH.toFile().getAbsolutePath() + "\\" + name + ".xml");
 							    Files.delete(path);
 							    Files.delete(Paths.get(path.toFile().getAbsolutePath().replaceAll(".xml", ".png")));
 						      } catch (IOException e1)
@@ -495,25 +527,14 @@ public class Main extends Application
 			double centerPosX = (contentSize.getWidth() - viewPort.getWidth()) * scrollP.getHvalue() + viewPort.getWidth() / 2;
 			double centerPosY = (contentSize.getHeight() - viewPort.getHeight()) * scrollP.getVvalue() + viewPort.getHeight() / 2;
 
-			System.out.println("centerPosX : " + centerPosX);
-			System.out.println("centerPosY : " + centerPosY);
-			System.out.println("Hvalue : " + scrollP.getHvalue());
-			System.out.println("Vvalue : " + scrollP.getVvalue());
-			
 			frame.zoomIn();
 
-			double newCenterX = centerPosX * frame.getResizer()/(frame.getResizer()-1);
-			double newCenterY = centerPosY * frame.getResizer()/(frame.getResizer()-1);
+			double newCenterX = centerPosX * frame.getResizer() / (frame.getResizer() - 1);
+			double newCenterY = centerPosY * frame.getResizer() / (frame.getResizer() - 1);
 
-			System.out.println("newCenterPosX : " + newCenterX);
-			System.out.println("newCenterPosY : " + newCenterY);
-			
-			scrollP.setHvalue((newCenterX - viewPort.getWidth() / 2) / (contentSize.getWidth() * frame.getResizer()/(frame.getResizer()-1) - viewPort.getWidth()));
-			scrollP.setVvalue((newCenterY - viewPort.getHeight() / 2) / (contentSize.getHeight() * frame.getResizer()/(frame.getResizer()-1) - viewPort.getHeight()));
+			scrollP.setHvalue((newCenterX - viewPort.getWidth() / 2) / (contentSize.getWidth() * frame.getResizer() / (frame.getResizer() - 1) - viewPort.getWidth()));
+			scrollP.setVvalue((newCenterY - viewPort.getHeight() / 2) / (contentSize.getHeight() * frame.getResizer() / (frame.getResizer() - 1) - viewPort.getHeight()));
 
-			System.out.println("new Hvalue : " + scrollP.getHvalue());
-			System.out.println("new Vvalue : " + scrollP.getVvalue());
-			
 		  }
 
 
@@ -528,11 +549,11 @@ public class Main extends Application
 
 			frame.zoomOut();
 
-			double newCenterX = centerPosX * frame.getResizer()/(frame.getResizer()+1);
-			double newCenterY = centerPosY * frame.getResizer()/(frame.getResizer()+1);
+			double newCenterX = centerPosX * frame.getResizer() / (frame.getResizer() + 1);
+			double newCenterY = centerPosY * frame.getResizer() / (frame.getResizer() + 1);
 
-			scrollP.setHvalue((newCenterX - viewPort.getWidth() / 2) / (contentSize.getWidth() * frame.getResizer()/(frame.getResizer()+1) - viewPort.getWidth()));
-			scrollP.setVvalue((newCenterY - viewPort.getHeight() / 2) / (contentSize.getHeight() * frame.getResizer()/(frame.getResizer()+1) - viewPort.getHeight()));
+			scrollP.setHvalue((newCenterX - viewPort.getWidth() / 2) / (contentSize.getWidth() * frame.getResizer() / (frame.getResizer() + 1) - viewPort.getWidth()));
+			scrollP.setVvalue((newCenterY - viewPort.getHeight() / 2) / (contentSize.getHeight() * frame.getResizer() / (frame.getResizer() + 1) - viewPort.getHeight()));
 
 		  }
 

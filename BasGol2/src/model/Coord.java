@@ -6,10 +6,9 @@ import java.io.Serializable;
 public class Coord implements Comparable<Object>, Serializable
         {
 
-	      /**
-       * 
-       */
+
       private static final long serialVersionUID = 3232742573742560148L;
+      
 	    private int x, y;
 
 
@@ -106,7 +105,7 @@ public class Coord implements Comparable<Object>, Serializable
 	      @Override
 	      public int hashCode()
 		    {
-			return (toString()).hashCode();
+			return toString().hashCode();
 		    }
 
         }

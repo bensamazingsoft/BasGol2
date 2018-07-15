@@ -56,6 +56,7 @@ public class BasGolCanvas extends Canvas
 			this.setOnMousePressed(new MouseClickControls());
 			this.setOnDragOver(new DragOverControls());
 			this.setOnDragDropped(new DragDroppedControls());
+			this.setOnDragExited(new DragExitedControls());
 
 			pattern = new GolPattern();
 			pattern.setName("temp");
@@ -138,7 +139,6 @@ public class BasGolCanvas extends Canvas
 					  grid[coord.getX()][coord.getY()] = false;
 				    });
 				    pattern.setCoords(history.pollLast());
-				    selection = new Selection();
 				    drawGrid();
 			      }
 		  }
@@ -193,7 +193,7 @@ public class BasGolCanvas extends Canvas
 		  {
 
 			graphic.setFill(Color.WHITE);
-			graphic.fillRect(0, 0, getWidth(), getHeight());
+			graphic.fillRect(0, 0, xFrame, yFrame);
 
 			pattern.getCoords().forEach((coord, bool) -> {
 
@@ -262,6 +262,7 @@ public class BasGolCanvas extends Canvas
 		  {
 
 			incResizer();
+			
 			xFrame = startXFrame * resizer;
 			yFrame = startYFrame * resizer;
 			xCell = xFrame / grid.length;
@@ -279,7 +280,7 @@ public class BasGolCanvas extends Canvas
 		  {
 
 			decResizer();
-
+			
 			xFrame = startXFrame * resizer;
 			yFrame = startYFrame * resizer;
 			xCell = xFrame / grid.length;
@@ -395,6 +396,25 @@ public class BasGolCanvas extends Canvas
 						ghostPattern = (GolPattern) evt.getDragboard().getContent(PatternFrame.dataFormat);
 						ghostPattern.shiftOrigin(ghostOg);
 
+						drawGrid();
+						evt.consume();
+					  }
+
+			      }
+
+		  }
+
+	    public class DragExitedControls implements EventHandler<DragEvent>
+		  {
+
+			@Override
+			public void handle(DragEvent evt)
+			      {
+
+				    if (evt.getGestureSource() != this && evt.getDragboard().hasContent(PatternFrame.dataFormat))
+					  {
+						evt.acceptTransferModes(TransferMode.ANY);
+						ghostPattern = new GolPattern();
 						drawGrid();
 						evt.consume();
 					  }
